@@ -55,8 +55,8 @@ string encrypt(string text, int key[2][2])
     {
         int x = text[i] - 'A';
         int y = text[i + 1] - 'A';
-        int c1 = mod26(key[0][1] * x + key[0][1] * y);
-        int c2 = mod26(key[1][0] * x + key[1][1] * y);
+        int c1 = mod26(key[0][0] * x + key[0][1] * y);
+        int c2 = mod26(key[1][0] * x + key[1][1] * y);        
         ans += char(c1 + 'A');
         ans += char(c2 + 'A'); 
     }
@@ -68,12 +68,12 @@ string decrypt(string text, int key[2][2])
     int inv[2][2];
     if (!inverseKey(key, inv)) return "Khong co ma tran nghich dao!\n";
     string ans = "";
-        for (int i = 0; i < text.size(); i += 2)
+    for (int i = 0; i < text.size(); i += 2)
     {
         int x = text[i] - 'A';
         int y = text[i + 1] - 'A';
-        int p1 = mod26(key[0][1] * x + key[0][1] * y);
-        int p2 = mod26(key[1][0] * x + key[1][1] * y);
+        int p1 = mod26(inv[0][0] * x + inv[0][1] * y);
+        int p2 = mod26(inv[1][0] * x + inv[1][1] * y);        
         ans += char(p1 + 'A');
         ans += char(p2 + 'A'); 
     }

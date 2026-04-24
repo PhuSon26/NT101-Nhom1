@@ -1,65 +1,91 @@
 import base64
 
+
+def ma_hoa_rsa(text, e, n):
+    # Bước 1: đổi thông điệp thành chuỗi số
+    # a-z  -> 00..25
+    # A-Z  -> 26..51
+    # " "  -> 62
+    # "."  -> 63
+
+    chuoi_so = ""
+
+    for ky_tu in text:
+        if "a" <= ky_tu <= "z":
+            ma = ord(ky_tu) - ord("a")
+            chuoi_so += str(ma).zfill(2)
+
+        elif "A" <= ky_tu <= "Z":
+            ma = ord(ky_tu) - ord("A") + 26
+            chuoi_so += str(ma).zfill(2)
+
+        elif ky_tu == " ":
+            chuoi_so += "62"
+
+        elif ky_tu == ".":
+            chuoi_so += "63"
+
+    # Bước 2: tìm xem mỗi block chứa tối đa bao nhiêu ký tự
+    # để khi đổi sang số thì block đó vẫn nhỏ hơn n
+    so_ky_tu_toi_da = 0
+    so_lon_nhat = 0
+
+    while so_lon_nhat * 100 + 66 < n:
+        so_lon_nhat = so_lon_nhat * 100 + 66
+        so_ky_tu_toi_da += 1
+
+    # Mỗi ký tự là 2 chữ số
+    do_dai_block = so_ky_tu_toi_da * 2
+
+    # Bước 3: nếu block cuối chưa đủ thì thêm khoảng trắng
+    while len(chuoi_so) % do_dai_block != 0:
+        chuoi_so += "62"
+
+    # Bước 4: chia block và mã hóa từng block bằng RSA
+    tat_ca_bytes = b""
+
+    # số byte cần để chứa 1 ciphertext block
+    so_byte_moi_block = (n.bit_length() + 7) // 8
+
+    for i in range(0, len(chuoi_so), do_dai_block):
+        block_text = chuoi_so[i:i + do_dai_block]
+        m = int(block_text)
+
+        # công thức RSA: C = M^e mod n
+        c = pow(m, e, n)
+
+        # đổi số c sang bytes để lát nữa encode Base64
+        tat_ca_bytes += c.to_bytes(so_byte_moi_block, byteorder="big")
+
+    # Bước 5: đổi toàn bộ sang Base64
+    ket_qua_base64 = base64.b64encode(tat_ca_bytes).decode()
+    return ket_qua_base64
+
+
 def main():
-    message = "The University of Information Technology."
+    thong_diep = "The University of Information Technology."
 
-    # 3 public key dùng để mã hóa
-    keys = {
-        "Key 1": (7, 187),
-        "Key 2": (17, 13588476140342208394395166469647627226674348541791),
-        "Key 3": (
-            int("0D88C3", 16),
-            int("E103ABD94892E3E74AFD724BF28E78366D9676BCCC70118BD0AA1968DBB143D1", 16)
-        )
-    }
+    # 3 public key
+    e1 = 7
+    n1 = 187
 
-    # đổi chuỗi thành dãy số 2 chữ số / ký tự
-    # a-z -> 00..25
-    # A-Z -> 26..51
-    # space -> 62
-    # . -> 63
-    number_string = ""
+    e2 = 17
+    n2 = 13588476140342208394395166469647627226674348541791
 
-    for ch in message:
-        if 'a' <= ch <= 'z':
-            number_string += str(ord(ch) - ord('a')).zfill(2)
-        elif 'A' <= ch <= 'Z':
-            number_string += str(ord(ch) - ord('A') + 26).zfill(2)
-        elif ch == ' ':
-            number_string += "62"
-        elif ch == '.':
-            number_string += "63"
+    e3 = int("0D88C3", 16)
+    n3 = int("E103ABD94892E3E74AFD724BF28E78366D9676BCCC70118BD0AA1968DBB143D1", 16)
 
-    for name, (e, n) in keys.items():
-        # tìm số ký tự tối đa trong 1 block sao cho block < n
-        max_chars = 0
-        biggest = 0
-        while biggest * 100 + 66 < n:
-            biggest = biggest * 100 + 66
-            max_chars += 1
+    print("Key 1:")
+    print(ma_hoa_rsa(thong_diep, e1, n1))
+    print()
 
-        digits_per_block = max_chars * 2
-        temp = number_string
+    print("Key 2:")
+    print(ma_hoa_rsa(thong_diep, e2, n2))
+    print()
 
-        # nếu block cuối chưa đủ thì thêm khoảng trắng
-        while len(temp) % digits_per_block != 0:
-            temp += "62"
-
-        # chia block và mã hóa RSA
-        cipher_bytes = b""
-        block_bytes = (n.bit_length() + 7) // 8
-
-        for i in range(0, len(temp), digits_per_block):
-            block = int(temp[i:i + digits_per_block])
-            cipher = pow(block, e, n)   # C = M^e mod n
-            cipher_bytes += cipher.to_bytes(block_bytes, byteorder="big")
-
-        # đổi sang Base64
-        cipher_base64 = base64.b64encode(cipher_bytes).decode()
-
-        print(name)
-        print(cipher_base64)
-        print()
+    print("Key 3:")
+    print(ma_hoa_rsa(thong_diep, e3, n3))
+    print()
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import math
+import base64
 
 def get_keys(p, q, e):
     n = p * q
@@ -43,3 +44,51 @@ m_recovered_auth = pow(c_auth, e, n)
 
 print(f"\nConfidentiality: Ciphertext={c_conf}, Recovered={m_recovered_conf}")
 print(f"Authentication: Ciphertext={c_auth}, Recovered={m_recovered_auth}")
+
+# 3. Sử dụng các khóa trên để mã hóa thông điệp sau: The University of Information Technology. Xác định bản mã dưới dạng Base64.
+message = "The University of Information Technology"
+message_byte = message.encode()
+m_int = int.from_bytes(message_byte, byteorder='big')
+e, n = public_key2
+c = pow(m_int, e, n)
+c_bytes = c.to_bytes((c.bit_length() + 7) // 8, byteorder='big')
+c_base64 = base64.b64encode(c_bytes).decode()
+print("Ciphertext (Base64): ", c_base64)
+
+# 4.  Tìm bản rõ tương ứng của mỗi bản mã sau, biết rằng chúng được mã hóa bằng một trong ba khóa đã cho ở trên.
+def rsa_decrypt(c_int, private_key):
+    d, n = private_key
+    return pow(c_int, d, n)
+
+def int_to_text(m_int):
+    try:
+        m_bytes = m_int.to_bytes((m_int.bit_length()+7)//8, 'big')
+        return m_bytes.decode(errors='ignore')
+    except:
+        return None
+
+def try_all_keys(c_int):
+    keys = [private_key1, private_key2, private_key3]
+    for i, key in enumerate(keys, 1):
+        m = rsa_decrypt(c_int, key)
+        text = int_to_text(m)
+        print(f"\nKey {i}:")
+        print("Recovered:", text)
+
+# ====== (1) Base64 ======
+c1_bytes = base64.b64decode("raUcesUlOkx/8ZhgodMoo0Uu18sC20yXlQFevSu7W/FDxIy0YRHMyXcHdD9PBvIT2aUft5fCQEGomiVVPv4I")
+c1 = int.from_bytes(c1_bytes, 'big')
+try_all_keys(c1)
+
+# ====== (2) Hex ======
+c2 = int("C87F570FC4F699CEC24020C6F54221ABAB2CE0C3", 16)
+try_all_keys(c2)
+
+# ====== (3) Base64 ======
+c3_bytes = base64.b64decode("Z2BUSkJcg0w4XEpgm0JcMExEQmBlVH6dYEpNTHpMHptMQ7NgTHlgQrNMQ2BKTQ==")
+c3 = int.from_bytes(c3_bytes, 'big')
+try_all_keys(c3)
+
+# ====== (4) Binary ======
+c4 = int("001010000001010011111111101101110010111011001010111011000110011110111111001111110110100011001111001100001001010001010100111101010100110011101110111011110101101100000100", 2)
+try_all_keys(c4)
